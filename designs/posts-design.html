@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Posts — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body,#root{height:100%;width:100%;}
+body{font-family:'Inter',system-ui,sans-serif;background:#f5f5f7;color:#0a0a0f;-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+
+/* ─── TOKENS ─────────────────────────────── */
+:root{
+  --bg:#f5f5f7; --surface:#fff;
+  --sidebar:#0d0d12; --sidebar-hover:#1a1a22; --sidebar-active:#1d4ed8;
+  --t1:#0a0a0f; --t2:#5a5a66; --t3:#9a9aa6;
+  --border:#e1e1e6; --border-s:#c8c8d0;
+  --accent:#1d4ed8; --accent-h:#2563eb; --accent-lt:#eff4ff;
+  --danger:#dc2626; --danger-lt:#fef2f2;
+  --success:#16a34a; --success-lt:#f0fdf4;
+  --warning:#d97706; --warning-lt:#fffbeb;
+  --sb-w:220px; --tb-h:48px; --bb-h:56px;
+}
+
+/* ─── SHELL ──────────────────────────────── */
+.shell{display:flex;height:100vh;overflow:hidden;}
+.sidebar{width:var(--sb-w);flex-shrink:0;background:var(--sidebar);display:flex;flex-direction:column;overflow-y:auto;scrollbar-width:none;}
+.sidebar::-webkit-scrollbar{display:none;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+.topbar{height:var(--tb-h);flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;justify-content:space-between;}
+.content{flex:1;overflow-y:auto;}
+
+/* ─── SIDEBAR ─────────────────────────────── */
+.sb-brand{padding:0 20px;height:var(--tb-h);flex-shrink:0;display:flex;align-items:center;border-bottom:1px solid rgba(255,255,255,.06);}
+.sb-brand-text{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:#fff;}
+.sb-brand-text span{color:var(--accent);margin-right:6px;}
+.sb-sep{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.25);padding:18px 20px 6px;}
+.sb-link{display:flex;align-items:center;gap:10px;padding:8px 20px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.55);cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:color 80ms,background 80ms;position:relative;}
+.sb-link:hover{background:var(--sidebar-hover);color:rgba(255,255,255,.85);}
+.sb-link.active{background:var(--sidebar-active);color:#fff;}
+.sb-link.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:#93c5fd;}
+.sb-icon{width:14px;height:14px;flex-shrink:0;opacity:.7;}
+.sb-link.active .sb-icon{opacity:1;}
+.sb-badge{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;background:rgba(255,255,255,.12);color:rgba(255,255,255,.5);padding:1px 6px;}
+.sb-link.active .sb-badge{background:rgba(255,255,255,.2);color:#fff;}
+
+/* ─── TOPBAR ─────────────────────────────── */
+.tb-title{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--t2);display:flex;align-items:center;gap:8px;}
+.tb-title strong{color:var(--t1);}
+.tb-title .sep{color:var(--border-s);}
+.tb-right{display:flex;align-items:center;gap:16px;}
+.tb-link{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);background:none;border:none;cursor:pointer;padding:0;}
+.tb-link:hover{color:var(--accent-h);}
+
+/* ─── BUTTONS ─────────────────────────────── */
+.btn{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;border:none;cursor:pointer;padding:7px 14px;transition:background 80ms,color 80ms;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-h);}
+.btn-ghost{background:transparent;color:var(--t2);border:1px solid var(--border-s);}
+.btn-ghost:hover{border-color:var(--t2);color:var(--t1);}
+.btn-ghost.active{border-color:var(--accent);color:var(--accent);background:var(--accent-lt);}
+.btn-danger-text{background:none;border:none;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--danger);cursor:pointer;padding:7px 0;}
+.btn-danger-text:hover{text-decoration:underline;}
+.btn-sm{padding:4px 10px;font-size:9px;}
+.btn-icon{background:none;border:1px solid var(--border);color:var(--t3);cursor:pointer;padding:5px 7px;display:inline-flex;align-items:center;transition:color 80ms,border-color 80ms;}
+.btn-icon:hover{color:var(--t1);border-color:var(--border-s);}
+.btn-icon.active{border-color:var(--accent);color:var(--accent);background:var(--accent-lt);}
+
+/* ─── BADGES ─────────────────────────────── */
+.badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border:1px solid;}
+.badge-published{background:var(--success-lt);color:var(--success);border-color:#bbf7d0;}
+.badge-draft{background:var(--warning-lt);color:var(--warning);border-color:#fde68a;}
+.badge-archived{background:var(--bg);color:var(--t3);border-color:var(--border-s);}
+
+/* ─── TABLE ──────────────────────────────── */
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);}
+.tbl-head{display:flex;align-items:center;justify-content:space-between;padding:12px 20px 11px;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap;}
+.tbl-title-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;flex:1;}
+.tbl-title-row::-webkit-scrollbar{display:none;}
+.tbl-actions{display:flex;gap:8px;align-items:center;flex-shrink:0;}
+.filter-tab{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--t3);padding:4px 14px 11px;cursor:pointer;white-space:nowrap;transition:color 80ms;margin-bottom:-1px;}
+.filter-tab:hover{color:var(--t1);}
+.filter-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.filter-sep{width:1px;height:16px;background:var(--border);flex-shrink:0;margin:0 2px;}
+table{width:100%;border-collapse:collapse;}
+thead tr{border-bottom:1px solid var(--border);}
+th{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);padding:10px 16px;text-align:left;white-space:nowrap;user-select:none;}
+th.sortable{cursor:pointer;}
+th.sortable:hover{color:var(--t1);}
+td{padding:13px 16px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:13px;color:var(--t1);}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr{cursor:pointer;transition:background 80ms;}
+tbody tr:hover td{background:#f9f9fb;}
+.td-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);letter-spacing:.04em;width:48px;}
+.td-title-main{font-size:14px;font-weight:500;color:var(--t1);line-height:1.3;margin-bottom:3px;}
+.td-excerpt{font-size:12px;color:var(--t2);line-height:1.4;max-width:480px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;}
+.td-mono{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;}
+.td-actions{width:80px;}
+.row-acts{display:flex;gap:4px;align-items:center;opacity:0;transition:opacity 80ms;}
+tbody tr:hover .row-acts{opacity:1;}
+.search-input{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;background:var(--bg);border:1px solid var(--border);color:var(--t1);padding:6px 10px;outline:none;width:200px;transition:border-color 80ms;}
+.search-input:focus{border-color:var(--accent);}
+.search-input::placeholder{color:var(--t3);}
+.tbl-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-top:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;}
+
+/* ─── EDITOR LAYOUT ──────────────────────── */
+.editor-shell{display:flex;flex-direction:column;height:100%;}
+.editor-main{flex:1;display:flex;min-height:0;overflow:hidden;}
+.editor-body{flex:1;overflow-y:auto;padding:32px 40px 32px;min-width:0;}
+.editor-sidebar{width:272px;flex-shrink:0;border-left:1px solid var(--border);background:var(--surface);overflow-y:auto;display:flex;flex-direction:column;}
+.editor-bottom-bar{height:var(--bb-h);flex-shrink:0;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;}
+
+/* Title input */
+.editor-title-input{
+  width:100%;font-family:'Inter',sans-serif;font-size:30px;font-weight:600;
+  color:var(--t1);background:transparent;border:none;outline:none;
+  line-height:1.2;letter-spacing:-.02em;margin-bottom:20px;
+  border-bottom:2px solid transparent;transition:border-color 150ms;
+}
+.editor-title-input:focus{border-bottom-color:var(--accent);}
+.editor-title-input::placeholder{color:var(--t3);}
+
+/* Toolbar */
+.toolbar{
+  display:flex;align-items:center;gap:1px;
+  border:1px solid var(--border);background:var(--bg);
+  padding:4px;margin-bottom:0;
+}
+.toolbar-sep{width:1px;height:20px;background:var(--border);margin:0 4px;flex-shrink:0;}
+.toolbar-btn{
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;
+  background:none;border:none;color:var(--t2);cursor:pointer;
+  padding:4px 8px;transition:color 80ms,background 80ms;
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:28px;height:28px;
+}
+.toolbar-btn:hover{background:var(--surface);color:var(--t1);}
+.toolbar-btn.active{background:var(--accent-lt);color:var(--accent);}
+.toolbar-btn svg{display:block;}
+.preview-btn{
+  margin-left:auto;
+  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;
+  background:none;border:1px solid var(--border-s);color:var(--t2);cursor:pointer;
+  padding:3px 10px;display:flex;align-items:center;gap:5px;transition:color 80ms,border-color 80ms;
+}
+.preview-btn:hover{color:var(--t1);border-color:var(--t2);}
+.preview-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-lt);}
+
+/* Editor content area */
+.editor-content{
+  min-height:360px;
+  border:1px solid var(--border);border-top:none;
+  background:var(--surface);
+  padding:24px 28px;outline:none;
+  font-family:'Newsreader',serif;font-size:17px;line-height:1.75;color:var(--t1);
+  cursor:text;
+}
+.editor-content:focus{border-color:var(--border-s);}
+.editor-content h2{font-size:22px;font-weight:500;line-height:1.25;margin:1.5em 0 .5em;letter-spacing:-.01em;}
+.editor-content blockquote{margin:1.5em 0;padding-left:18px;border-left:2px solid var(--accent);font-style:italic;color:var(--t2);}
+.editor-content code{font-family:'JetBrains Mono',monospace;font-size:13px;background:#f5f5f7;padding:2px 5px;color:var(--t1);}
+.editor-content pre{background:#f5f5f7;border:1px solid var(--border);padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:13px;margin:1.5em 0;overflow-x:auto;}
+.editor-content a{color:var(--accent);}
+.editor-content p{margin-bottom:1.2em;}
+.editor-content p:last-child{margin-bottom:0;}
+
+/* Preview pane */
+.preview-pane{
+  min-height:360px;border:1px solid var(--border);border-top:none;
+  background:var(--surface);padding:24px 28px;
+  font-family:'Newsreader',serif;font-size:17px;line-height:1.75;color:var(--t1);
+}
+.preview-pane h2{font-size:22px;font-weight:500;line-height:1.25;margin:1.5em 0 .5em;letter-spacing:-.01em;}
+.preview-pane blockquote{margin:1.5em 0;padding-left:18px;border-left:2px solid var(--accent);font-style:italic;color:var(--t2);}
+.preview-pane code{font-family:'JetBrains Mono',monospace;font-size:13px;background:#f5f5f7;padding:2px 5px;}
+.preview-pane a{color:var(--accent);}
+.preview-pane p{margin-bottom:1.2em;}
+.preview-placeholder{color:var(--t3);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:48px 28px;text-align:center;}
+
+/* Editor sidebar internals */
+.esb-section{padding:18px 20px;border-bottom:1px solid var(--border);}
+.esb-label{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:8px;display:block;}
+.esb-input{width:100%;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;color:var(--t1);background:var(--bg);border:1px solid var(--border);padding:6px 8px;outline:none;transition:border-color 80ms;}
+.esb-input:focus{border-color:var(--accent);}
+.esb-input::placeholder{color:var(--t3);}
+.esb-select{width:100%;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--t1);background:var(--bg);border:1px solid var(--border);padding:6px 8px;outline:none;appearance:none;cursor:pointer;}
+.esb-select:focus{border-color:var(--accent);}
+.esb-textarea{width:100%;font-family:'Inter',sans-serif;font-size:13px;color:var(--t1);background:var(--bg);border:1px solid var(--border);padding:8px 10px;outline:none;resize:vertical;min-height:90px;line-height:1.5;transition:border-color 80ms;}
+.esb-textarea:focus{border-color:var(--accent);}
+.esb-textarea::placeholder{color:var(--t3);}
+.esb-meta-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;}
+.esb-meta-key{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);}
+.esb-meta-val{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t2);}
+.status-toggle{display:flex;gap:1px;background:var(--border);}
+.status-opt{flex:1;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;background:var(--surface);border:none;cursor:pointer;padding:7px 0;text-align:center;color:var(--t3);transition:color 80ms;}
+.status-opt.active{background:var(--accent);color:#fff;}
+.word-count{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);letter-spacing:.06em;}
+.char-count{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);letter-spacing:.04em;margin-top:4px;text-align:right;}
+
+/* ─── TOAST ──────────────────────────────── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--t1);color:#fff;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;padding:10px 20px;display:flex;align-items:center;gap:8px;z-index:9999;animation:toastIn 200ms ease both;}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.toast-dot{width:6px;height:6px;background:#4ade80;border-radius:50%;flex-shrink:0;}
+
+/* ─── MISC ───────────────────────────────── */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;padding:24px 28px 20px;flex-wrap:wrap;gap:12px;}
+.ph-title{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--t1);}
+.breadcrumb{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-top:4px;display:flex;align-items:center;gap:6px;}
+.bc-link{color:var(--accent);cursor:pointer;background:none;border:none;padding:0;font:inherit;letter-spacing:inherit;}
+.bc-link:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect, useCallback } = React;
+
+/* ─── DATA ───────────────────────────────── */
+const POSTS_DATA = [
+  { id:1, title:"The India–China–US Triangle in 2026", slug:"india-china-us-triangle-2026", category:"geopolitics", date:"Apr 28, 2026", readTime:"9 min", status:"published", excerpt:"Three powers, three competing visions for the next century of global order. Here's why the geometry of this relationship matters more than the bilateral noise.", body:`<p>The framing everyone uses is wrong. India–China tensions, US–China rivalry, the Quad as containment theater — these are all descriptions of bilateral dynamics inside what is fundamentally a three-body problem. And three-body problems don't have stable equilibria.</p><p>Start with the basic geometry. The US wants to maintain primacy. China wants to revise the current order. India wants strategic autonomy — which in practice means refusing to be a pawn in either direction while quietly accumulating leverage from both.</p><h2>Why 2026 is different</h2><p>Three things converged this year that make the triangle more acute than it's been in two decades. First, India's semiconductor ambitions stopped being aspirational and started being structural — the CHIPS-equivalent legislation that passed in March wasn't just industrial policy, it was a geopolitical alignment signal.</p><blockquote>The question isn't whether India will choose sides. The question is how long India can profit from not choosing.</blockquote><p>The honest answer is: longer than most analysts expect. India has something neither the US nor China can easily replicate — a genuinely non-aligned tradition that is culturally legible to the Global South.</p>` },
+  { id:2, title:"What Karpathy's nanoGPT Taught Me About Transformer Attention", slug:"karpathy-nanogpt-transformer-attention", category:"ai", date:"Apr 14, 2026", readTime:"12 min", status:"published", excerpt:"Reading nanoGPT line by line was the best thing I did for my ML intuition. Here's the attention mechanism, demystified from first principles.", body:`<p>There's a version of understanding transformers where you read the Attention Is All You Need paper, nod along to the diagrams, and feel like you understand it. I did this. I did not understand it.</p><p>The version that actually worked: cloning <code>karpathy/nanoGPT</code> and refusing to move past any line until I could explain it to myself out loud.</p>` },
+  { id:3, title:"We're in a Rates Regime Change and Most Models Are Stale", slug:"interest-rates-regime-change", category:"finance", date:"Mar 30, 2026", readTime:"7 min", status:"published", excerpt:"Forty years of falling rates meant you could get away with a lot of sloppy capital allocation. The free lunch is over. Here's what actually changes.", body:"<p>Draft content...</p>" },
+  { id:4, title:"LLM Epistemics: What We Lost When We Stopped Googling", slug:"llm-epistemics-what-we-lost", category:"ai", date:"Mar 12, 2026", readTime:"8 min", status:"published", excerpt:"There's a subtle epistemological shift happening in how technically-minded people form beliefs. It's worth being explicit about.", body:"<p>Draft content...</p>" },
+  { id:5, title:"What 'Building in Public' Actually Means (And What It Doesn't)", slug:"building-in-public-actually-means", category:"tech", date:"Feb 28, 2026", readTime:"5 min", status:"published", excerpt:"The phrase has been colonized by people who use it to mean posting screenshots of revenue dashboards. That's not it.", body:"<p>Draft content...</p>" },
+  { id:6, title:"The Philosophy of Technical Debt", slug:"philosophy-of-technical-debt", category:"tech", date:"Feb 10, 2026", readTime:"6 min", status:"draft", excerpt:"Debt is a financial metaphor. Like all financial metaphors applied to software, it misleads as much as it illuminates.", body:"<p>Work in progress...</p>" },
+  { id:7, title:"India's Startup Ecosystem in 2026: The Quiet Maturation", slug:"india-startup-ecosystem-2026", category:"geopolitics", date:"Jan 22, 2026", readTime:"10 min", status:"published", excerpt:"Less noise, more infrastructure. The frothy 2021 era is a distant memory. What's left is actually more interesting.", body:"<p>Draft content...</p>" },
+  { id:8, title:"Camus for the Software Engineer", slug:"camus-absurd-software-engineer", category:"philosophy", date:"Jan 8, 2026", readTime:"7 min", status:"published", excerpt:"The absurd isn't an abstract philosophical concept. It's what you feel at 2am debugging a race condition that only appears in production.", body:"<p>Draft content...</p>" },
+];
+const CATS = ['all','ai','geopolitics','finance','tech','philosophy'];
+
+/* ─── UTILS ──────────────────────────────── */
+const titleToSlug = t => t.toLowerCase().replace(/[''"]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+
+/* ─── ICONS ──────────────────────────────── */
+const Ic = ({d,size=14}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    {Array.isArray(d) ? d.map((p,i)=><path key={i} d={p}/>) : <path d={d}/>}
+  </svg>
+);
+const IC = {
+  grid:["M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 0h7v7h-7z"],
+  file:["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z","M14 2v6h6"],
+  folder:["M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"],
+  book:["M4 19.5A2.5 2.5 0 0 1 6.5 17H20","M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"],
+  settings:["M12 20h9","M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"],
+  user:["M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2","M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"],
+  plus:["M12 5v14","M5 12h14"],
+  edit:["M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7","M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"],
+  trash:["M3 6h18","M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"],
+  eye:["M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z","M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"],
+  arrow_l:["M19 12H5","M12 19l-7-7 7-7"],
+  link:["M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71","M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"],
+  code:["M16 18l6-6-6-6","M8 6l-6 6 6 6"],
+  quote:["M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z","M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"],
+};
+
+/* ─── TOAST ──────────────────────────────── */
+function Toast({ msg, onDone }) {
+  useEffect(() => { const t = setTimeout(onDone, 2200); return () => clearTimeout(t); }, []);
+  return <div className="toast"><span className="toast-dot"></span>{msg}</div>;
+}
+
+/* ─── SIDEBAR ─────────────────────────────── */
+const NAV_ITEMS = [
+  { id:'dashboard', label:'Dashboard', icon:'grid' },
+  { type:'sep', label:'Content' },
+  { id:'posts', label:'Posts', icon:'file', badge:'8' },
+  { id:'projects', label:'Projects', icon:'folder', badge:'4' },
+  { id:'reading', label:'Reading', icon:'book', badge:'13' },
+  { type:'sep', label:'Site' },
+  { id:'config', label:'Site Config', icon:'settings' },
+  { id:'about', label:'About', icon:'user' },
+];
+function Sidebar({ active }) {
+  return (
+    <div className="sidebar">
+      <div className="sb-brand"><span className="sb-brand-text"><span>■</span>CMS</span></div>
+      {NAV_ITEMS.map((item,i) => item.type==='sep' ? (
+        <div key={i} className="sb-sep">{item.label}</div>
+      ) : (
+        <button key={item.id} className={`sb-link${active===item.id?' active':''}`}>
+          <svg className="sb-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            {IC[item.icon].map((d,i)=><path key={i} d={d}/>)}
+          </svg>
+          {item.label}
+          {item.badge && <span className="sb-badge">{item.badge}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ─── SCREEN 1: POSTS LIST ───────────────── */
+function PostsList({ onEdit, onNew, showToast }) {
+  const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const [sortCol, setSortCol] = useState('date');
+  const [sortDir, setSortDir] = useState(-1);
+
+  const filtered = POSTS_DATA.filter(p =>
+    (filter==='all' || p.category===filter) &&
+    (!search || p.title.toLowerCase().includes(search.toLowerCase()) || p.excerpt.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  const counts = {};
+  CATS.forEach(c => {
+    counts[c] = c==='all' ? POSTS_DATA.length : POSTS_DATA.filter(p=>p.category===c).length;
+  });
+
+  return (
+    <div className="editor-shell">
+      <div className="content" style={{padding:'0'}}>
+        <div className="page-header">
+          <div>
+            <div className="ph-title">Posts</div>
+            <div className="breadcrumb">
+              <button className="bc-link">Admin</button><span>/</span><span>Posts</span>
+            </div>
+          </div>
+          <button className="btn btn-primary" onClick={onNew}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            NEW POST
+          </button>
+        </div>
+
+        <div style={{padding:'0 28px 24px'}}>
+          <div className="tbl-wrap">
+            {/* Filter + Search bar */}
+            <div className="tbl-head" style={{borderBottom:'1px solid var(--border)'}}>
+              <div className="tbl-title-row">
+                {CATS.map((cat,i) => (
+                  <React.Fragment key={cat}>
+                    <button
+                      className={`filter-tab${filter===cat?' active':''}`}
+                      onClick={() => setFilter(cat)}
+                    >
+                      {cat==='all' ? 'ALL' : cat.toUpperCase()}
+                      <span style={{marginLeft:5, color: filter===cat?'var(--accent)':'var(--border-s)', fontSize:9}}>
+                        {counts[cat]}
+                      </span>
+                    </button>
+                    {i < CATS.length-1 && <div className="filter-sep"></div>}
+                  </React.Fragment>
+                ))}
+              </div>
+              <div className="tbl-actions">
+                <input
+                  className="search-input"
+                  placeholder="SEARCH POSTS..."
+                  value={search}
+                  onChange={e=>setSearch(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Table */}
+            <table>
+              <thead>
+                <tr>
+                  <th className="td-num">#</th>
+                  <th style={{minWidth:320}}>Title</th>
+                  <th className="sortable" onClick={()=>{setSortCol('category');}}>Category</th>
+                  <th className="sortable" onClick={()=>{setSortCol('date');}}>Date</th>
+                  <th>Read</th>
+                  <th>Status</th>
+                  <th className="td-actions"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((post,i) => (
+                  <tr key={post.id} onClick={() => onEdit(post)}>
+                    <td className="td-num">{String(i+1).padStart(3,'0')}</td>
+                    <td>
+                      <div className="td-title-main">{post.title}</div>
+                      <div className="td-excerpt">{post.excerpt}</div>
+                    </td>
+                    <td className="td-mono">{post.category.toUpperCase()}</td>
+                    <td className="td-mono">{post.date}</td>
+                    <td className="td-mono">{post.readTime}</td>
+                    <td><span className={`badge badge-${post.status}`}>{post.status}</span></td>
+                    <td onClick={e=>e.stopPropagation()}>
+                      <div className="row-acts">
+                        <button className="btn btn-ghost btn-sm" onClick={()=>onEdit(post)}>EDIT</button>
+                        <button className="btn-icon btn-sm" onClick={()=>showToast('POST DELETED')} title="Delete">
+                          <Ic d={IC.trash} size={12} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filtered.length===0 && (
+                  <tr><td colSpan={7} style={{textAlign:'center',padding:'40px 20px',fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:'var(--t3)',letterSpacing:'.08em',textTransform:'uppercase'}}>
+                    NO POSTS MATCH YOUR FILTER
+                  </td></tr>
+                )}
+              </tbody>
+            </table>
+
+            {/* Footer */}
+            <div className="tbl-footer">
+              <span>SHOWING {filtered.length} OF {POSTS_DATA.length} POSTS</span>
+              <span>{POSTS_DATA.filter(p=>p.status==='published').length} PUBLISHED · {POSTS_DATA.filter(p=>p.status==='draft').length} DRAFT</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCREEN 2: POST EDITOR ──────────────── */
+function PostEditor({ post, onBack, showToast }) {
+  const isNew = !post;
+  const [title, setTitle] = useState(post?.title || '');
+  const [slug, setSlug] = useState(post?.slug || '');
+  const [slugEdited, setSlugEdited] = useState(!!post);
+  const [category, setCategory] = useState(post?.category || 'ai');
+  const [readTime, setReadTime] = useState(post?.readTime || '');
+  const [status, setStatus] = useState(post?.status || 'draft');
+  const [excerpt, setExcerpt] = useState(post?.excerpt || '');
+  const [wordCount, setWordCount] = useState(0);
+  const [isPreview, setIsPreview] = useState(false);
+  const [previewContent, setPreviewContent] = useState('');
+  const [saved, setSaved] = useState(false);
+  const editorRef = useRef(null);
+
+  // Auto-slug from title
+  useEffect(() => {
+    if (!slugEdited && title) setSlug(titleToSlug(title));
+  }, [title, slugEdited]);
+
+  // Init editor content
+  useEffect(() => {
+    if (editorRef.current && post?.body) {
+      editorRef.current.innerHTML = post.body;
+      countWords();
+    }
+  }, []);
+
+  const countWords = () => {
+    if (!editorRef.current) return;
+    const txt = editorRef.current.innerText || '';
+    setWordCount(txt.trim() ? txt.trim().split(/\s+/).length : 0);
+  };
+
+  const exec = useCallback((cmd, val=null) => {
+    editorRef.current?.focus();
+    document.execCommand(cmd, false, val);
+  }, []);
+
+  const toolbar = [
+    {
+      group: [
+        { label:'H2', title:'Heading 2', action:() => exec('formatBlock',false,'h2') },
+        { label:<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><text x="4" y="18" fontSize="18" fontWeight="700" fontFamily="serif">B</text></svg>, title:'Bold', action:() => exec('bold') },
+        { label:<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><text x="6" y="18" fontSize="17" fontWeight="400" fontFamily="serif" fontStyle="italic">I</text></svg>, title:'Italic', action:() => exec('italic') },
+      ]
+    },
+    {
+      group: [
+        { label:<Ic d={IC.quote} size={13}/>, title:'Blockquote', action:() => exec('formatBlock',false,'blockquote') },
+        { label:<Ic d={IC.code} size={13}/>, title:'Code Block', action:() => {
+          const sel = window.getSelection();
+          if (sel && sel.toString()) exec('insertHTML', `<code>${sel.toString()}</code>`);
+        }},
+        { label:<Ic d={IC.link} size={13}/>, title:'Link', action:() => {
+          const url = window.prompt('URL:','https://');
+          if (url) exec('createLink', url);
+        }},
+      ]
+    }
+  ];
+
+  const togglePreview = () => {
+    if (!isPreview) setPreviewContent(editorRef.current?.innerHTML || '');
+    setIsPreview(p => !p);
+  };
+
+  const handleSaveDraft = () => {
+    showToast('DRAFT SAVED');
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handlePublish = () => {
+    showToast(status === 'published' ? 'CHANGES PUBLISHED' : 'POST PUBLISHED');
+  };
+
+  const excerptLen = excerpt.length;
+  const excerptMax = 200;
+
+  return (
+    <div className="editor-shell">
+      {/* Topbar override */}
+      <div style={{height:'var(--tb-h)',flexShrink:0,background:'var(--surface)',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',padding:'0 24px',justifyContent:'space-between',gap:16}}>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <button className="btn btn-ghost btn-sm" onClick={onBack} style={{display:'flex',alignItems:'center',gap:5}}>
+            <Ic d={IC.arrow_l} size={11} /> POSTS
+          </button>
+          <span style={{color:'var(--border-s)',fontFamily:"'JetBrains Mono'",fontSize:11}}>/</span>
+          <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,letterSpacing:'.06em',textTransform:'uppercase',color:'var(--t2)'}}>
+            {isNew ? 'NEW POST' : 'EDITING'}
+          </span>
+          {!isNew && (
+            <>
+              <span style={{color:'var(--border-s)',fontFamily:"'JetBrains Mono'",fontSize:11}}>/</span>
+              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,letterSpacing:'.04em',color:'var(--t1)',maxWidth:280,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{title}</span>
+            </>
+          )}
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <span className="word-count">{wordCount} WORDS</span>
+          <button className={`preview-btn${isPreview?' active':''}`} onClick={togglePreview}>
+            <Ic d={IC.eye} size={11} />
+            {isPreview ? 'EDIT' : 'PREVIEW'}
+          </button>
+        </div>
+      </div>
+
+      <div className="editor-main">
+        {/* Main editor area */}
+        <div className="editor-body">
+          {/* Title */}
+          <input
+            className="editor-title-input"
+            placeholder="Post title..."
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+          />
+
+          {/* Toolbar */}
+          <div className="toolbar">
+            {toolbar.map((grp, gi) => (
+              <React.Fragment key={gi}>
+                {gi > 0 && <div className="toolbar-sep"></div>}
+                {grp.group.map((btn, bi) => (
+                  <button
+                    key={bi}
+                    className="toolbar-btn"
+                    title={btn.title}
+                    onMouseDown={e => { e.preventDefault(); btn.action(); }}
+                  >
+                    {typeof btn.label === 'string'
+                      ? <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,fontWeight:500}}>{btn.label}</span>
+                      : btn.label
+                    }
+                  </button>
+                ))}
+              </React.Fragment>
+            ))}
+            <div className="toolbar-sep"></div>
+            <button
+              className="toolbar-btn"
+              title="Clear formatting"
+              onMouseDown={e=>{ e.preventDefault(); exec('removeFormat'); }}
+              style={{fontSize:10,letterSpacing:'.06em'}}
+            >
+              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10}}>TX</span>
+            </button>
+          </div>
+
+          {/* Editor / Preview */}
+          {isPreview ? (
+            previewContent ? (
+              <div className="preview-pane" dangerouslySetInnerHTML={{__html: previewContent}} />
+            ) : (
+              <div className="preview-pane"><div className="preview-placeholder">NOTHING TO PREVIEW YET</div></div>
+            )
+          ) : (
+            <div
+              className="editor-content"
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              ref={editorRef}
+              onInput={countWords}
+              data-placeholder="Start writing..."
+              style={{position:'relative'}}
+            />
+          )}
+        </div>
+
+        {/* Right sidebar */}
+        <div className="editor-sidebar">
+          {/* Status */}
+          <div className="esb-section">
+            <span className="esb-label">Status</span>
+            <div className="status-toggle">
+              <button className={`status-opt${status==='draft'?' active':''}`} onClick={()=>setStatus('draft')}>DRAFT</button>
+              <button className={`status-opt${status==='published'?' active':''}`} onClick={()=>setStatus('published')}>PUBLISHED</button>
+            </div>
+          </div>
+
+          {/* Slug */}
+          <div className="esb-section">
+            <span className="esb-label">Slug</span>
+            <input
+              className="esb-input"
+              value={slug}
+              onChange={e=>{setSlug(e.target.value);setSlugEdited(true);}}
+              placeholder="post-slug-here"
+            />
+            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:'var(--t3)',marginTop:5,letterSpacing:'.04em'}}>
+              /{slug || '—'}
+            </div>
+          </div>
+
+          {/* Category */}
+          <div className="esb-section">
+            <span className="esb-label">Category</span>
+            <div style={{position:'relative'}}>
+              <select className="esb-select" value={category} onChange={e=>setCategory(e.target.value)}>
+                {['ai','geopolitics','finance','tech','philosophy'].map(c => (
+                  <option key={c} value={c}>{c.toUpperCase()}</option>
+                ))}
+              </select>
+              <div style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',pointerEvents:'none',color:'var(--t3)'}}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Read Time */}
+          <div className="esb-section">
+            <span className="esb-label">Read Time</span>
+            <input
+              className="esb-input"
+              value={readTime}
+              onChange={e=>setReadTime(e.target.value)}
+              placeholder="8 min"
+            />
+          </div>
+
+          {/* Excerpt */}
+          <div className="esb-section" style={{flex:1}}>
+            <div className="esb-meta-row">
+              <span className="esb-label" style={{marginBottom:0}}>Excerpt</span>
+              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:excerptLen>excerptMax?'var(--danger)':'var(--t3)',letterSpacing:'.04em'}}>{excerptLen}/{excerptMax}</span>
+            </div>
+            <div style={{marginTop:8}}>
+              <textarea
+                className="esb-textarea"
+                value={excerpt}
+                onChange={e=>setExcerpt(e.target.value)}
+                placeholder="Brief description for listing pages and SEO..."
+                rows={5}
+              />
+            </div>
+          </div>
+
+          {/* Metadata */}
+          <div className="esb-section" style={{background:'var(--bg)'}}>
+            {[
+              ['CREATED', isNew ? '—' : 'Jan 8, 2026'],
+              ['UPDATED', isNew ? '—' : 'Just now'],
+              ['WORD COUNT', `${wordCount} words`],
+              ['READ TIME (EST)', wordCount ? `${Math.max(1,Math.round(wordCount/200))} min` : '—'],
+            ].map(([k,v]) => (
+              <div className="esb-meta-row" key={k} style={{marginBottom:6}}>
+                <span className="esb-meta-key">{k}</span>
+                <span className="esb-meta-val">{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom action bar */}
+      <div className="editor-bottom-bar">
+        <button className="btn-danger-text" onClick={()=>showToast('POST DELETED')}>
+          DELETE POST
+        </button>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:'var(--t3)',letterSpacing:'.06em',textTransform:'uppercase',marginRight:8}}>
+            {saved ? '✓ SAVED' : 'UNSAVED CHANGES'}
+          </span>
+          <button className="btn btn-ghost" onClick={handleSaveDraft}>SAVE DRAFT</button>
+          <button className="btn btn-primary" onClick={handlePublish}>
+            {status==='published' ? 'UPDATE POST' : 'PUBLISH →'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── APP ────────────────────────────────── */
+function App() {
+  const [screen, setScreen] = useState(() => sessionStorage.getItem('posts_screen') || 'list');
+  const [editPost, setEditPost] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = useCallback(msg => { setToast(null); setTimeout(()=>setToast(msg),10); }, []);
+
+  const openEditor = (post) => {
+    setEditPost(post);
+    setScreen('editor');
+    sessionStorage.setItem('posts_screen','editor');
+  };
+  const openNew = () => {
+    setEditPost(null);
+    setScreen('editor');
+    sessionStorage.setItem('posts_screen','editor');
+  };
+  const goBack = () => {
+    setScreen('list');
+    sessionStorage.setItem('posts_screen','list');
+  };
+
+  return (
+    <div className="shell">
+      <Sidebar active="posts" />
+      <div className="main">
+        {/* Topbar only for list screen */}
+        {screen === 'list' && (
+          <div className="topbar">
+            <div className="tb-title">
+              <span>ADMIN</span>
+              <span className="sep">/</span>
+              <strong>UTKARSH PANCHAL</strong>
+              <span className="sep">·</span>
+              <span style={{color:'var(--t3)'}}>POSTS</span>
+            </div>
+            <div className="tb-right">
+              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,letterSpacing:'.06em',textTransform:'uppercase',color:'var(--t3)'}}>LOGGED IN AS UP</span>
+              <button className="tb-link">VIEW SITE ↗</button>
+            </div>
+          </div>
+        )}
+
+        {/* Screens */}
+        {screen === 'list' && (
+          <div className="content" style={{padding:0}}>
+            <PostsList onEdit={openEditor} onNew={openNew} showToast={showToast} />
+          </div>
+        )}
+        {screen === 'editor' && (
+          <PostEditor post={editPost} onBack={goBack} showToast={showToast} />
+        )}
+      </div>
+      {toast && <Toast key={toast+Date.now()} msg={toast} onDone={()=>setToast(null)} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
